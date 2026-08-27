@@ -1,0 +1,7 @@
+secrets/
+*.env
+.env
+
+*.swp
+*~
+.DB_Store
