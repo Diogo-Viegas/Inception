@@ -1,43 +1,35 @@
 #!/bin/bash
 set -e
 
-#LE PASSWORDS DE FICHEIROS SECRET SE EXISTIREM
+# Lê passwords de ficheiros de secrets se existirem
 if [ -f "/run/secrets/db_root_password" ]; then
     MYSQL_ROOT_PASSWORD=$(cat /run/secrets/db_root_password)
-fi 
+fi
 if [ -f "/run/secrets/db_password" ]; then
     MYSQL_PASSWORD=$(cat /run/secrets/db_password)
-fi 
+fi
 
-#GARANTE QUE AS PASTAS DO RUNTIME E SOCKETS EXISTEM COM AS PERMISSOES CORRETAS
+# Cria as diretorias de runtime e socket com as permissões corretas
 mkdir -p /run/mysqld
 chown -R mysql:mysql /run/mysqld /var/lib/mysql
 
-#INICIA AS TABELAS DE SISTEMA NA PRIMEIRA INICIALIZACAO
+# Inicializa as tabelas de sistema apenas na primeira execução
 if [ ! -d "/var/lib/mysql/mysql" ]; then
-    mysql_install_db --user=mysql --datadir=/var/lib/mysql
+    mysql_install_db --user=mysql --datadir=/var/lib/mysql > /dev/null
 
-#INICIA O DAEMON TEMPORARIAMENTE EM BACKGROUND PARA INJETAR COMNADOS SQL DE CRIACAO
-    mariadbd-safe --datadir=/var/lib/mysql &
-
-    #ESPERA ATE O SOCKET ESTAR ATIVO E PRONTO
-    while ! mysqladminp ping --silent; do
-        sleep 1
-    done
-
-    #CRIACAO DO USER DA BD E DO ROOT PROTEGIDO
-    # Criação do utilizador da base de dados e do root protegido
-    mariadb -u root <<EOF
+    # Cria o utilizador para '%' (rede Docker) e para 'localhost' (acesso local/testes)
+    mariadbd --user=mysql --bootstrap <<EOF
+USE mysql;
+FLUSH PRIVILEGES;
 ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';
 CREATE DATABASE IF NOT EXISTS \`${MYSQL_DATABASE}\`;
 CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'\%' IDENTIFIED BY '${MYSQL_PASSWORD}';
+CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'localhost' IDENTIFIED BY '${MYSQL_PASSWORD}';
 GRANT ALL PRIVILEGES ON \`${MYSQL_DATABASE}\`.* TO '${MYSQL_USER}'@'%';
+GRANT ALL PRIVILEGES ON \`${MYSQL_DATABASE}\`.* TO '${MYSQL_USER}'@'localhost';
 FLUSH PRIVILEGES;
 EOF
-
-    # Encerra o servidor temporário de bootstrap
-    mysqladmin -u root -p"${MYSQL_ROOT_PASSWORD}" shutdown
 fi
 
-# O comando 'exec' substitui a shell atual pelo binário final do MariaDB, garantindo o PID 1
-exec mariadbd-safe --datadir=/var/lib/mysql
+# O comando exec passa o controlo final para o MariaDB assumir o PID 1
+exec mariadbd --user=mysql
