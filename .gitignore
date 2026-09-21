@@ -1,7 +1,9 @@
+#SEGREDOS E VARIAVEIS SENSIVEIS
 secrets/
 *.env
 .env
 
+#FICHEIROS DE SISTEM E TEMPORARIOS
 *.swp
 *~
 .DB_Store
