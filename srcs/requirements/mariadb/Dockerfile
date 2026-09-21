@@ -1,23 +1,22 @@
-FROM debian:bookworm
+# Imagem base: Debian (versão penúltima estável), sem tag "latest"
+FROM debian:bookworm-slim
 
-# Install MariaDB
-RUN apt-get update && apt-get install -y \
-    mariadb-server \
-    && rm -rf /var/lib/apt/lists/*
+# Instala o servidor MariaDB sem pacotes recomendados supérfluos
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends mariadb-server && \
+    rm -rf /var/lib/apt/lists/*
 
-# Criação das pastas de runtime e logs com permissões adequadas
-RUN mkdir -p /run/mysqld /var/run/mysqld /var/log/mysql \
-    && chown -R mysql:mysql /run/mysqld /var/run/mysqld /var/log/mysql \
-    && chmod 755 /run/mysqld /var/run/mysqld /var/log/mysql
+# Configuração personalizada do servidor
+COPY conf/50-server.cnf /etc/mysql/mariadb.conf.d/50-server.cnf
 
-# Copy configuration
-COPY conf/50-server.cnf /etc/mysql/mariadb.conf.d/
-COPY tools/init_db.sh /usr/local/bin/
-
-# Set permissions
-RUN chmod +x /usr/local/bin/init_db.sh
-
+# Script de arranque/inicialização
+COPY tools/init_db.sh /usr/local/bin/setup.sh
+RUN chmod +x /usr/local/bin/setup.sh && \
+    mkdir -p /run/mysqld && \
+    chown -R mysql:mysql /run/mysqld /var/lib/mysql
 
 EXPOSE 3306
 
-ENTRYPOINT ["init_db.sh"]
+# O script termina sempre com "exec mariadbd", tornando o próprio
+# processo do servidor o PID 1 do container (sem daemonizar, sem tail -f)
+ENTRYPOINT ["/usr/local/bin/setup.sh"]

@@ -1,13 +1,12 @@
 [mysqld]
-user = mysql
-pid-file = /var/run/mysqld/mysqld.pid
-socket = /var/run/mysqld/mysqld.sock
-port = 3086
-basedir = /usr
-datadir = /var/lib/mysql
-tmpdir = /tmp
-#log-error = /var/log/mysql/error.log
-lc-messages-dir = /usr/share/mysql
+user            = mysql
+datadir         = /var/lib/mysql
+socket          = /run/mysqld/mysqld.sock
+pid-file        = /run/mysqld/mysqld.pid
+port            = 3306
 
-#PERMITE CONEXOES DE OUTROS CONTAINER NA MESMA REDE DOCKER
-bind-address = 0.0.0.0
+# Necessário para aceitar ligações vindas de outros containers
+# na docker-network (o WordPress liga-se por aqui)
+bind-address    = 0.0.0.0
+
+skip-name-resolve
