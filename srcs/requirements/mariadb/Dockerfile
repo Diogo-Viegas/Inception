@@ -1,15 +1,23 @@
 FROM debian:bookworm
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install MariaDB
+RUN apt-get update && apt-get install -y \
     mariadb-server \
-    mariadb-client \
     && rm -rf /var/lib/apt/lists/*
 
-COPY conf/50-server.conf /etc/mysql/mariadb.conf.d/50-server.conf
-COPY tools/mariadb_setup.sh /usr/local/bin/mariadb_setup.sh
+# Criação das pastas de runtime e logs com permissões adequadas
+RUN mkdir -p /run/mysqld /var/run/mysqld /var/log/mysql \
+    && chown -R mysql:mysql /run/mysqld /var/run/mysqld /var/log/mysql \
+    && chmod 755 /run/mysqld /var/run/mysqld /var/log/mysql
 
-RUN chmod +x /usr/local/bin/mariadb_setup.sh
+# Copy configuration
+COPY conf/50-server.cnf /etc/mysql/mariadb.conf.d/
+COPY tools/init_db.sh /usr/local/bin/
+
+# Set permissions
+RUN chmod +x /usr/local/bin/init_db.sh
+
 
 EXPOSE 3306
 
-ENTRYPOINT ["/usr/local/bin/mariadb_setup.sh"]
+ENTRYPOINT ["init_db.sh"]
