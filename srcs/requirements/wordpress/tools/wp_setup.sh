@@ -1,55 +1,61 @@
 #!/bin/bash
 set -e
 
-# Lê segredos se existirem
-if [ -f "/run/secrets/db_password" ]; then
-    MYSQL_PASSWORD=$(cat /run/secrets/db_password)
-fi
-if [ -f "/run/secrets/wp_admin_password" ]; then
-    WP_ADMIN_PASSWORD=$(cat /run/secrets/wp_admin_password)
-fi
-if [ -f "/run/secrets/wp_user_password" ]; then
-    WP_USER_PASSWORD=$(cat /run/secrets/wp_user_password)
+WP_PATH="/var/www/html"
+
+# Read password from secret file
+if [ -n "$WORDPRESS_DB_PASSWORD_FILE" ] && [ -f "$WORDPRESS_DB_PASSWORD_FILE" ]; then
+    WORDPRESS_DB_PASSWORD=$(cat "$WORDPRESS_DB_PASSWORD_FILE")
+    export WORDPRESS_DB_PASSWORD
 fi
 
-mkdir -p /var/www/html
-chown -R www-data:www-data /var/www/html
-cd /var/www/html
+echo "Setting up WordPress..."
 
-# Aguarda até o MariaDB aceitar conexões TCP (sem exigir autenticação para o ping)
-echo "[INFO] A aguardar pelo serviço MariaDB..."
-while ! mariadb-admin ping -h"mariadb" --silent; do
-    sleep 2
-done
+# Download and configure WordPress if not present
+if [ ! -f "$WP_PATH/wp-config.php" ]; then
+    echo "Downloading WordPress..."
+    wget -q https://wordpress.org/latest.tar.gz -O /tmp/wordpress.tar.gz
+    tar -xzf /tmp/wordpress.tar.gz -C /tmp
+    rm /tmp/wordpress.tar.gz
 
-# Só instala se o ficheiro de configuração ainda não existir
-if [ ! -f "wp-config.php" ]; then
-    echo "[INFO] A descarregar e configurar WordPress via WP-CLI..."
-    wp core download --allow-root
+    # Copy only missing files (avoid overwriting existing content)
+    cp -rn /tmp/wordpress/* "$WP_PATH" || true
+    rm -rf /tmp/wordpress
 
-    wp config create \
-        --dbname="${MYSQL_DATABASE}" \
-        --dbuser="${MYSQL_USER}" \
-        --dbpass="${MYSQL_PASSWORD}" \
-        --dbhost="mariadb:3306" \
-        --allow-root
+    # Fetch security salts from WordPress API
+    WP_SALTS=$(wget -qO- https://api.wordpress.org/secret-key/1.1/salt/)
 
-    wp core install \
-        --url="https://${DOMAIN_NAME}" \
-        --title="Inception" \
-        --admin_user="${WP_ADMIN_USER}" \
-        --admin_password="${WP_ADMIN_PASSWORD}" \
-        --admin_email="${WP_ADMIN_EMAIL}" \
-        --skip-email \
-        --allow-root
+    # Create wp-config.php
+    cat > "$WP_PATH/wp-config.php" << EOF
+<?php
+define('DB_NAME', '${WORDPRESS_DB_NAME}');
+define('DB_USER', '${WORDPRESS_DB_USER}');
+define('DB_PASSWORD', '${WORDPRESS_DB_PASSWORD}');
+define('DB_HOST', '${WORDPRESS_DB_HOST}');
+define('DB_CHARSET', 'utf8');
+define('DB_COLLATE', '');
 
-    wp user create \
-        "${WP_USER}" \
-        "${WP_USER_EMAIL}" \
-        --role=author \
-        --user_pass="${WP_USER_PASSWORD}" \
-        --allow-root
+\$table_prefix = '${WORDPRESS_TABLE_PREFIX:-wp_}';
+
+${WP_SALTS}
+
+define('WP_DEBUG', false);
+
+if ( !defined('ABSPATH') )
+    define('ABSPATH', __DIR__ . '/');
+
+require_once ABSPATH . 'wp-settings.php';
+EOF
+
+    # Set secure permissions
+    find "$WP_PATH" -type d -exec chmod 750 {} \;
+    find "$WP_PATH" -type f -exec chmod 640 {} \;
+    chown -R www-data:www-data "$WP_PATH"
+
+    echo "WordPress setup complete."
+else
+    echo "WordPress already initialized, skipping setup."
 fi
 
-echo "[INFO] A arrancar o PHP-FPM em primeiro plano (PID 1)..."
+echo "Starting PHP-FPM..."
 exec php-fpm8.2 -F

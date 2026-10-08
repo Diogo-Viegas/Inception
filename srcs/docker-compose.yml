@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   mariadb:
@@ -23,14 +22,15 @@ services:
     container_name: wordpress
     restart: always
     environment:
-      MYSQL_HOST: mariadb
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
+      WORDPRESS_DB_HOST: mariadb
+      WORDPRESS_DB_NAME: ${MYSQL_DATABASE}
+      WORDPRESS_DB_USER: ${MYSQL_USER}
       DOMAIN_NAME: ${DOMAIN_NAME}
       WP_ADMIN_USER: ${WP_ADMIN_USER}
       WP_ADMIN_EMAIL: ${WP_ADMIN_EMAIL}
       WP_USER: ${WP_USER}
       WP_USER_EMAIL: ${WP_USER_EMAIL}
+
     secrets:
       - db_password
       - wp_admin_password
