@@ -3,10 +3,18 @@ set -e
 
 WP_PATH="/var/www/html"
 
-# Read password from secret file
+
+
+# Ler password do secret se existir
 if [ -n "$WORDPRESS_DB_PASSWORD_FILE" ] && [ -f "$WORDPRESS_DB_PASSWORD_FILE" ]; then
     WORDPRESS_DB_PASSWORD=$(cat "$WORDPRESS_DB_PASSWORD_FILE")
     export WORDPRESS_DB_PASSWORD
+fi
+
+# Verificar se as variáveis obrigatórias existem
+if [ -z "$WORDPRESS_DB_NAME" ] || [ -z "$WORDPRESS_DB_USER" ]; then
+    echo "[ERROR] Variáveis de ambiente da base de dados em falta!"
+    exit 1
 fi
 
 echo "Setting up WordPress..."
