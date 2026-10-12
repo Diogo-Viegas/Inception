@@ -18,6 +18,9 @@ if [ ! -d "/var/lib/mysql/mysql" ]; then
 fi
 echo "MYSQL_PASSWORD -> ${MYSQL_PASSWORD}"
 echo "MYSQL_ROOT_PASSWORD -> ${MYSQL_ROOT_PASSWORD}"
+echo "MYSQL_DATABASE -> ${MYSQL_DATABASE}"
+echo "MYSQL_USER -> ${MYSQL_USER}"
+
 # Start the server (no networking for setup)
 echo "Starting temporary MariaDB server for setup..."
 mysqld --skip-networking --socket=/run/mysqld/mysqld.sock --user=mysql &

@@ -10,9 +10,9 @@ if [ -n "$WORDPRESS_DB_PASSWORD_FILE" ] && [ -f "$WORDPRESS_DB_PASSWORD_FILE" ];
     export WORDPRESS_DB_PASSWORD
 fi
 # search for the database password and save it 
-if [ -n "$WORDPRESS_DB_ADMIN_PASSWORD_FILE" ] && [ -f "$WORDPRESS_DB_ADMIN_PASSWORD_FILE" ]; then
-    WORDPRESS_DB_ADMIN_PASSWORD=$(cat "$WORDPRESS_DB_ADMIN_PASSWORD_FILE")
-    export WORDPRESS_DB_ADMIN_PASSWORD
+if [ -n "$WP_ADMIN_PASSWORD_FILE" ] && [ -f "$WP_ADMIN_PASSWORD_FILE" ]; then
+    WP_ADMIN_PASSWORD=$(cat "$WP_ADMIN_PASSWORD_FILE")
+    export WP_ADMIN_PASSWORD
 fi
 
 # verify if the database name and user are in .env
@@ -72,18 +72,19 @@ EOF
                      --admin_user="${WP_ADMIN_USER}" \
                      --admin_password="${WP_ADMIN_PASSWORD}" \
                      --admin_email="${WP_ADMIN_EMAIL}" \
-                     --path="$WP_PATH" --allow-root
-
+                     --path="$WP_PATH" --allow-root 
+    wp option update siteurl ${DOMAIN_NAME} --path=${WP_PATH} --allow-root 
+    wp option update home ${DOMAIN_NAME} --path=${WP_PATH} --allow-root
     echo "WordPress setup complete."
 else
     echo "WordPress already initialized, skipping setup."
 fi
 
 echo "Starting PHP-FPM..."
-echo "1 ${DOMAIN_NAME}"
-echo "2 ${WP_TITLE}"
-echo "3 ${WP_ADMIN_USER}"
-echo "4 ${WORDPRESS_DB_ADMIN_PASSWORD}"
-echo "5 ${WP_ADMIN_EMAIL}"
-echo "6 ${WP_PATH}"
+echo "1 DOMAIN NAME -> ${DOMAIN_NAME}"
+echo "2 WORDPRESS TITLE -> ${WP_TITLE}"
+echo "3 WORDPRESS ADMIN USER -> ${WP_ADMIN_USER}"
+echo "4 WORDPRESS ADMIN DATABASE PASSWORD -> ${WP_ADMIN_PASSWORD}"
+echo "5 WORDPRESS ADMIN EMAIL -> ${WP_ADMIN_EMAIL}"
+echo "6 WORDPRESS PATH -> ${WP_PATH}"
 exec php-fpm8.2 -F

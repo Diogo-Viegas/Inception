@@ -25,7 +25,7 @@ services:
     restart: always
     environment:
       WORDPRESS_DB_PASSWORD_FILE: /run/secrets/db_password
-      WORDPRESS_DB_ADMIN_PASSWORD_FILE: /run/secrets/wp_admin_password
+      WP_ADMIN_PASSWORD_FILE: /run/secrets/wp_admin_password
       WORDPRESS_DB_HOST: ${WP_DB_HOST}
       WORDPRESS_DB_NAME: ${MYSQL_DATABASE}
       WORDPRESS_DB_USER: ${MYSQL_USER}
