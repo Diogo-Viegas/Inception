@@ -11,31 +11,25 @@ if [ -n "$MYSQL_ROOT_PASSWORD_FILE" ] && [ -f "$MYSQL_ROOT_PASSWORD_FILE" ]; the
     MYSQL_ROOT_PASSWORD=$(cat "$MYSQL_ROOT_PASSWORD_FILE")
     export MYSQL_ROOT_PASSWORD
 fi
+
+mkdir -p /run/mysqld
+chown -R mysql:mysql /var/lib/mysql /run/mysqld
+
 # Initialize MySQL data directory if it doesn't exist
-if [ ! -d "/var/lib/mysql/mysql" ]; then
-    echo "Initializing data directory..."
-    mysql_install_db --user=mysql --datadir=/var/lib/mysql > /dev/null
-fi
-echo "MYSQL_PASSWORD -> ${MYSQL_PASSWORD}"
-echo "MYSQL_ROOT_PASSWORD -> ${MYSQL_ROOT_PASSWORD}"
-echo "MYSQL_DATABASE -> ${MYSQL_DATABASE}"
-echo "MYSQL_USER -> ${MYSQL_USER}"
+if [ ! -d "/var/lib/mysql/${MYSQL_DATABASE}" ]; then
+    echo "First Run: Initializing MariaDB..."
 
-# Start the server (no networking for setup)
-echo "Starting temporary MariaDB server for setup..."
-mysqld --skip-networking --socket=/run/mysqld/mysqld.sock --user=mysql &
-pid="$!"
+    if [! -d "/var/lib/mysql/mysql"]; then
+        mysql_install_db --user=mysql --datadir=/var/lib/mysql > /dev/null
+    fi
 
-# Wait for MariaDB to be ready
-echo "Waiting for MariaDB to be ready..."
-until mysqladmin --socket=/run/mysqld/mysqld.sock ping >/dev/null 2>&1; do
-    sleep 1
-done
-echo "MariaDB is ready!"
-
-# Run setup SQL: create database and users
-echo "Running setup SQL..."
-mysql --socket=/run/mysqld/mysqld.sock -u root << EOF
+    mysqld --skip-networking --socket=/run/mysqld/mysqld.sock --user=mysql &
+    pid="$!"
+    
+    until mysqladmin --socket=/run/mysqld/mysqld.sock ping >/dev/null 2>&1; do
+        sleep 1
+    done
+    mysql --socket=/run/mysqld/mysqld.sock -u root << EOF
 ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';
 CREATE DATABASE IF NOT EXISTS ${MYSQL_DATABASE};
 CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';
@@ -43,14 +37,12 @@ GRANT ALL PRIVILEGES ON ${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'%';
 FLUSH PRIVILEGES;
 EOF
 
-# Shut down temporary server
-echo "Shutting down temporary MariaDB..."
-mysqladmin --socket=/run/mysqld/mysqld.sock -u root -p"${MYSQL_ROOT_PASSWORD}" shutdown
+    mysqladmin --socket=/run/mysqld/mysqld.sock -u root -p"${MYSQL_ROOT_PASSWORD}" shutdown
 
-# Wait for shutdown
-wait "$pid" || true
-
+    # Wait for shutdown
+    wait "$pid" || true
+    echo "Initialization complete. Starting MariaDB..."
 # Start MariaDB normally (with networking)
+fi
 
-echo "Initialization complete. Starting MariaDB..."
 exec mysqld --user=mysql --datadir=/var/lib/mysql --socket=/run/mysqld/mysqld.sock
