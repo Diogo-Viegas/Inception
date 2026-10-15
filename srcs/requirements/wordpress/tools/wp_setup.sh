@@ -4,17 +4,21 @@ set -e
 WP_PATH="/var/www/html"
 
 
-# search for the database password and save it 
+# search for the passwords 
 if [ -n "$WORDPRESS_DB_PASSWORD_FILE" ] && [ -f "$WORDPRESS_DB_PASSWORD_FILE" ]; then
     WORDPRESS_DB_PASSWORD=$(cat "$WORDPRESS_DB_PASSWORD_FILE")
     export WORDPRESS_DB_PASSWORD
 fi
-# search for the database password and save it 
+
 if [ -n "$WP_ADMIN_PASSWORD_FILE" ] && [ -f "$WP_ADMIN_PASSWORD_FILE" ]; then
     WP_ADMIN_PASSWORD=$(cat "$WP_ADMIN_PASSWORD_FILE")
     export WP_ADMIN_PASSWORD
 fi
 
+if [ -n "$WP_USER_PASSWORD_FILE" ] && [ -f "$WP_USER_PASSWORD_FILE" ]; then
+    WP_USER_PASSWORD=$(cat "$WP_USER_PASSWORD_FILE")
+    export WP_USER_PASSWORD
+fi
 # verify if the database name and user are in .env
 if [ -z "$WORDPRESS_DB_NAME" ] || [ -z "$WORDPRESS_DB_USER" ]; then
     echo "[ERROR] Missing Environment Variables for Database"
@@ -67,24 +71,19 @@ EOF
     find "$WP_PATH" -type d -exec chmod 755 {} \;
     find "$WP_PATH" -type f -exec chmod 644 {} \;
     chown -R www-data:www-data "$WP_PATH"
+
     wp core install --url="${DOMAIN_NAME}" \
                      --title="${WP_TITLE}" \
                      --admin_user="${WP_ADMIN_USER}" \
                      --admin_password="${WP_ADMIN_PASSWORD}" \
                      --admin_email="${WP_ADMIN_EMAIL}" \
                      --path="$WP_PATH" --allow-root 
-    wp option update siteurl ${DOMAIN_NAME} --path=${WP_PATH} --allow-root 
-    wp option update home ${DOMAIN_NAME} --path=${WP_PATH} --allow-root
+    wp user create "${WP_USER}" "${WP_USER_EMAIL}" --role=subscriber --user_pass="${WP_USER_PASSWORD}" --allow-root
+    echo "${WP_USER_PASSWORD}";
     echo "WordPress setup complete."
+    echo "ola"
 else
     echo "WordPress already initialized, skipping setup."
 fi
 
-echo "Starting PHP-FPM..."
-echo "1 DOMAIN NAME -> ${DOMAIN_NAME}"
-echo "2 WORDPRESS TITLE -> ${WP_TITLE}"
-echo "3 WORDPRESS ADMIN USER -> ${WP_ADMIN_USER}"
-echo "4 WORDPRESS ADMIN DATABASE PASSWORD -> ${WP_ADMIN_PASSWORD}"
-echo "5 WORDPRESS ADMIN EMAIL -> ${WP_ADMIN_EMAIL}"
-echo "6 WORDPRESS PATH -> ${WP_PATH}"
 exec php-fpm8.2 -F

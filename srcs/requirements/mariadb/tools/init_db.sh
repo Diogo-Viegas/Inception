@@ -19,7 +19,7 @@ chown -R mysql:mysql /var/lib/mysql /run/mysqld
 if [ ! -d "/var/lib/mysql/${MYSQL_DATABASE}" ]; then
     echo "First Run: Initializing MariaDB..."
 
-    if [! -d "/var/lib/mysql/mysql"]; then
+    if [ ! -d "/var/lib/mysql/mysql"]; then
         mysql_install_db --user=mysql --datadir=/var/lib/mysql > /dev/null
     fi
 

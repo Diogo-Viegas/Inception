@@ -19,8 +19,9 @@ MYSQL_USER=inception_user
 
 # WordPress
 WP_TITLE=Inception
-WP_ADMIN_USER=admin_dviegas
-WP_ADMIN_EMAIL=admin@dviegas.42.fr
-WP_USER=author_dviegas
-WP_USER_EMAIL=author@dviegas.42.fr
+WP_ADMIN_USER=master
+WP_ADMIN_EMAIL=master@dviegas.42.fr
+WP_USER=dviegas
+WP_USER_EMAIL=user@dviegas.42.fr
+WP_DB_HOST=mariadb
 EOF
