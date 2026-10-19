@@ -235,6 +235,7 @@ AI (Claude, by Anthropic) was used as a support tool for the following tasks:
 - **Debugging the MariaDB container:** analyzing the restart-loop logs (`ERROR 1045: Access denied for user 'root'@'localhost'`) and identifying that the setup SQL ran on every start even though the root password had already been set.
 - **Rewriting the MariaDB entrypoint script** (`init_db.sh`) to make initialization idempotent, handle permissions on the data directory at runtime, and stop printing passwords to the logs.
 - **Reviewing `docker-compose.yml`:** spotting a missing `WP_USER_PASSWORD_FILE`, suggesting a healthcheck with `depends_on: condition: service_healthy`, and clarifying how named volumes with `driver_opts` relate to the subject's volume rules.
-- **Drafting this README**, including the comparison sections.
+- **Drafting this README**, including the comparison sections.-
+- **Designing and Generating**, html and css for the static website bonus.
 
 All AI-generated suggestions were reviewed, tested and adapted by the author, who is able to explain every part of the project.
