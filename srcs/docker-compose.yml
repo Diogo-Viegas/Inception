@@ -63,6 +63,18 @@ services:
     depends_on:
       - wordpress
 
+  adminer:
+    build:
+      context: .
+      dockerfile: requirements/bonus/adminer/Dockerfile
+    container_name: adminer
+    restart: always
+    networks:
+      - inception_net
+    depends_on:
+      - mariadb
+    environment:
+      - DB_SERVER=mariadb
 secrets:
   db_root_password:
     file: ./secrets/db_root_password.txt
