@@ -75,6 +75,14 @@ services:
       - mariadb
     environment:
       - DB_SERVER=mariadb
+
+  static-site:
+    build: requirements/bonus/static-site
+    image: static-site
+    container_name: static-site
+    networks:
+      - inception_net
+    restart: unless-stopped
 secrets:
   db_root_password:
     file: ./secrets/db_root_password.txt

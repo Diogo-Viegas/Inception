@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inception · 42</title>
+  <meta name="description" content="Explanation of the 42 Inception project: infrastructure with Docker, NGINX, WordPress and MariaDB.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="nav">
+  <a class="brand" href="#topo">inception<span>.</span></a>
+  <nav>
+    <a href="#projeto">Project</a>
+    <a href="#arquitetura">Architecture</a>
+    <a href="#servicos">Services</a>
+    <a href="#conceitos">Concepts</a>
+    <a href="#bonus">Bonus</a>
+  </nav>
+</header>
+
+<main id="topo">
+
+  <section class="hero">
+    <p class="tag">42 Project · System Administration</p>
+    <h1>Inception</h1>
+    <p class="lead">A complete web mini-infrastructure built from scratch with <strong>Docker</strong> and <strong>Docker Compose</strong>: an NGINX server, a WordPress instance, and a MariaDB database, each in its own container.</p>
+    <div class="chips">
+      <span>Docker</span><span>Docker Compose</span><span>NGINX</span><span>WordPress</span><span>PHP-FPM</span><span>MariaDB</span><span>TLS</span>
+    </div>
+  </section>
+
+  <section id="projeto">
+    <h2>What is the project?</h2>
+    <p>Inception asks you to set up a small infrastructure inside a virtual machine using Docker. Instead of downloading ready-made images, each service is built from a hand-written <code>Dockerfile</code>, starting from a Debian or Alpine base image.</p>
+    <div class="grid3">
+      <article class="card">
+        <h3>Objective</h3>
+        <p>Understand how the services of a web application communicate with each other and how to isolate, configure, and orchestrate them.</p>
+      </article>
+      <article class="card">
+        <h3>Tools</h3>
+        <p>Dockerfiles, <code>docker-compose.yml</code>, <code>Makefile</code>, <code>.env</code> file, and secrets for credentials.</p>
+      </article>
+      <article class="card">
+        <h3>Result</h3>
+        <p>A WordPress site accessible only via HTTPS on port 443, with data that persists even after deleting the containers.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="arquitetura">
+    <h2>Architecture</h2>
+    <p>The only entry point is NGINX on port 443. The rest of the infrastructure lives in a private Docker network.</p>
+
+    <div class="diagram" role="img" aria-label="Diagram: Browser, NGINX, WordPress and MariaDB linked in sequence, with two volumes">
+      <div class="node ext">Browser<small>https://login.42.fr</small></div>
+      <div class="link"><span>443 · TLS</span></div>
+      <div class="node">NGINX<small>proxy + TLS 1.2/1.3</small></div>
+      <div class="link"><span>9000 · FastCGI</span></div>
+      <div class="node">WordPress<small>PHP-FPM</small></div>
+      <div class="link"><span>3306 · SQL</span></div>
+      <div class="node">MariaDB<small>database</small></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card vol">
+        <h3>Volume · site</h3>
+        <p>WordPress files, shared between the NGINX and WordPress containers.</p>
+      </div>
+      <div class="card vol">
+        <h3>Volume · database</h3>
+        <p>MariaDB files, so that data survives reboots and <code>docker compose down</code>.</p>
+      </div>
+    </div>
+    <p class="note">Both data services store everything on the host at <code>/home/login/data</code>. Container-to-container communication takes place on a dedicated Docker network, without <code>--link</code> or <code>network: host</code>.</p>
+  </section>
+
+  <section id="servicos">
+    <h2>The Services</h2>
+    <div class="services">
+      <article class="service">
+        <div class="badge">1</div>
+        <div>
+          <h3>NGINX</h3>
+          <p>The entry point of the infrastructure. Accepts only TLSv1.2 or TLSv1.3 connections on port 443 and forwards PHP requests to WordPress via FastCGI.</p>
+        </div>
+      </article>
+      <article class="service">
+        <div class="badge">2</div>
+        <div>
+          <h3>WordPress + PHP-FPM</h3>
+          <p>The application itself, installed and configured via script using WP-CLI. Runs without NGINX: PHP-FPM listens on port 9000 and receives requests from the proxy.</p>
+        </div>
+      </article>
+      <article class="service">
+        <div class="badge">3</div>
+        <div>
+          <h3>MariaDB</h3>
+          <p>Stores WordPress content, users, and settings. Accessible only from the internal network, never from the outside.</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="conceitos">
+    <h2>Important Concepts</h2>
+    <div class="grid2">
+      <article class="card">
+        <h3>Docker vs. Virtual Machine</h3>
+        <p>A container shares the host kernel and isolates only processes and the file system. It is much lighter than a VM, which brings a full operating system.</p>
+      </article>
+      <article class="card">
+        <h3>Docker Compose</h3>
+        <p>Describes all services, networks, and volumes in a single file and spins everything up with a single command, reproducibly.</p>
+      </article>
+      <article class="card">
+        <h3>Volumes and Persistence</h3>
+        <p>A container's file system is ephemeral. Volumes store data outside of it, on the host.</p>
+      </article>
+      <article class="card">
+        <h3>Docker Network</h3>
+        <p>Containers resolve each other by service name (<code>mariadb</code>, <code>wordpress</code>) thanks to the internal DNS created by Compose.</p>
+      </article>
+      <article class="card">
+        <h3>Secrets and Environment Variables</h3>
+        <p>No passwords appear in the Dockerfiles. Credentials come from <code>.env</code> files and Docker secrets, outside the repository.</p>
+      </article>
+      <article class="card">
+        <h3>PID 1</h3>
+        <p>The main process of each container runs in the foreground as PID 1. Tricks like <code>tail -f</code> or <code>sleep infinity</code> are not accepted.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="regras">
+    <h2>Rules Defining the Project</h2>
+    <ul class="rules">
+      <li>Each service has its own container and its own Dockerfile.</li>
+      <li>Base images: penultimate stable version of Debian or Alpine. No <code>latest</code> tags.</li>
+      <li>No ready-made images from Docker Hub are used (except the base image).</li>
+      <li>Containers restart automatically in case of failure.</li>
+      <li>The WordPress database has two users, one of them an administrator without "admin" in the name.</li>
+      <li>The domain <code>login.42.fr</code> points to the machine's local IP.</li>
+    </ul>
+  </section>
+
+  <section id="bonus">
+    <h2>Bonus Part</h2>
+    <p>After the mandatory part, you can add extra services, each in its own container:</p>
+    <div class="grid3">
+      <article class="card"><h3>Redis</h3><p>Cache for WordPress to reduce the number of database queries.</p></article>
+      <article class="card"><h3>FTP Server</h3><p>Access to the WordPress volume to transfer files.</p></article>
+      <article class="card"><h3>Adminer</h3><p>Web interface to manage the database.</p></article>
+      <article class="card"><h3>Choice Service</h3><p>Any useful service, with justification during the defense.</p></article>
+      <article class="card highlight"><h3>Static Website</h3><p>This page! Served by its own container, without PHP, and exposed through NGINX.</p></article>
+    </div>
+  </section>
+
+  <section id="aprendizagem">
+    <h2>What You Learn</h2>
+    <p>More than just memorizing commands, Inception forces you to think like a system administrator: isolate responsibilities, automate installation, protect credentials, ensure persistence, and understand the path of a request from the browser to the database.</p>
+  </section>
+
+</main>
+
+<footer>
+  <p>Inception Project · 42 School · Built with HTML and CSS, served by NGINX inside a container.</p>
+</footer>
+
+</body>
+</html>
