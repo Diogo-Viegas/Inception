@@ -5,8 +5,7 @@ socket          = /run/mysqld/mysqld.sock
 pid-file        = /run/mysqld/mysqld.pid
 port            = 3306
 
-# Necessário para aceitar ligações vindas de outros containers
-# na docker-network (o WordPress liga-se por aqui)
+# accepts connections from every container inside the docker network
 bind-address    = 0.0.0.0
 
 skip-name-resolve

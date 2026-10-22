@@ -35,12 +35,15 @@ make --version
     ├── .env                      # Non-sensitive configuration
     ├── docker-compose.yml
     └── requirements/
+        ├─ bonus/
+        |   ├─ adminer/
+        |   ├─ static-site/       # Dockerfile, conf/static.conf, site/html and css
         ├── mariadb/              # Dockerfile, conf/50-server.cnf, tools/init_db.sh
         ├── wordpress/            # Dockerfile, conf/, tools/
         └── nginx/                # Dockerfile, conf/
 ```
 
-Adjust this tree if your layout differs.
+
 
 ## 3. Set up the environment from scratch
 
@@ -112,7 +115,6 @@ make fclean     # clean + delete the data in /home/dviegas/data
 make re         # fclean, then rebuild and start
 ```
 
-These target names are the usual ones. Check the real ones in your `Makefile` with `grep '^[a-zA-Z_-]*:' Makefile`.
 
 ### 4.2 With Docker Compose directly
 
@@ -155,7 +157,6 @@ docker volume rm inception_db_data        # remove a volume object (containers m
 docker volume prune                       # remove unused volumes
 ```
 
-Volume names are prefixed with the Compose project name (by default the folder containing the compose file), so use `docker volume ls` to see the exact names.
 
 ## 7. Where data is stored and how it persists
 
@@ -191,19 +192,8 @@ volumes:
 To wipe the project and start again from a clean state:
 
 ```bash
-docker compose -f srcs/docker-compose.yml down -v
-sudo rm -rf /home/dviegas/data/mariadb/* /home/dviegas/data/wordpress/*
-docker compose -f srcs/docker-compose.yml up --build -d
+make fclean
 ```
 
 This step is needed whenever a previous run left the database half-initialized or with a different root password, which shows up in `docker logs mariadb` as `ERROR 1045: Access denied for user 'root'@'localhost'`.
 
-## 8. Quick verification checklist
-
-- [ ] `docker compose -f srcs/docker-compose.yml ps` shows `mariadb`, `wordpress` and `nginx` as `Up`.
-- [ ] `https://dviegas.42.fr` loads (accept the self-signed certificate).
-- [ ] `http://dviegas.42.fr` (port 80) does not respond.
-- [ ] Only port 443 is published: `docker ps` shows `0.0.0.0:443->443/tcp` for nginx and no ports for the others.
-- [ ] `/wp-admin` login works with the admin user, whose name does not contain "admin".
-- [ ] A post or comment added in WordPress is still there after `down` and `up`.
-- [ ] `docker logs mariadb` shows no passwords and no errors.

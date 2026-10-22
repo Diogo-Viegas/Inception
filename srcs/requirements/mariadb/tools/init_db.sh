@@ -42,7 +42,8 @@ EOF
     # Wait for shutdown
     wait "$pid" || true
     echo "Initialization complete. Starting MariaDB..."
-# Start MariaDB normally (with networking)
+else
+    echo "MariaDB already initialized, skipping..."
 fi
 
 exec mysqld --user=mysql --datadir=/var/lib/mysql --socket=/run/mysqld/mysqld.sock

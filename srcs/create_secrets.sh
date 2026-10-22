@@ -1,10 +1,10 @@
 
 mkdir -p secrets
 
-echo -n "sua_senha_mariadb_user" > secrets/db_password.txt
-echo -n "sua_senha_mariadb_root" > secrets/db_root_password.txt
-echo -n "sua_senha_wp_admin" > secrets/wp_admin_password.txt
-echo -n "sua_senha_wp_user" > secrets/wp_user_password.txt
+echo -n "password" > secrets/db_password.txt
+echo -n "password" > secrets/db_root_password.txt
+echo -n "password" > secrets/wp_admin_password.txt
+echo -n "password" > secrets/wp_user_password.txt
 
 
 chmod 600 secrets/*.txt

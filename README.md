@@ -43,18 +43,23 @@ Data is persisted in two volumes: the WordPress database and the WordPress websi
 .
 ├── Makefile
 ├── README.md
-├── secrets/                  # Password files (never committed)
+├── USER_DOC.md
+├── DEV_DOC.md
+├── secrets/                      # Password files (not committed)
 │   ├── db_root_password.txt
 │   ├── db_password.txt
 │   ├── wp_admin_password.txt
 │   └── wp_user_password.txt
 └── srcs/
-    ├── .env                  # Non-sensitive configuration (never commited)
+    ├── .env                      # Non-sensitive configuration
     ├── docker-compose.yml
     └── requirements/
-        ├── mariadb/          # Dockerfile, conf/, tools/init_db.sh
-        ├── wordpress/        # Dockerfile, conf/, tools/
-        └── nginx/            # Dockerfile, conf/, tools/
+        ├─ bonus/
+        |   ├─ adminer/
+        |   ├─ static-site/       # Dockerfile, conf/static.conf, site/html and css
+        ├── mariadb/              # Dockerfile, conf/50-server.cnf, tools/init_db.sh
+        ├── wordpress/            # Dockerfile, conf/, tools/
+        └── nginx/                # Dockerfile, conf/
 ```
 
 ### Main design choices
@@ -205,9 +210,17 @@ docker compose -f srcs/docker-compose.yml down       # stop and remove container
 The database is only initialized when its data folder is empty. To start from scratch:
 
 ```bash
-docker compose -f srcs/docker-compose.yml down -v
-sudo rm -rf /home/dviegas/data/mariadb/* /home/dviegas/data/wordpress/*
+make re
 ```
+## Quick verification checklist
+
+- [ ] `docker compose -f srcs/docker-compose.yml ps` shows `mariadb`, `wordpress` and `nginx` as `Up`.
+- [ ] `https://dviegas.42.fr` loads (accept the self-signed certificate).
+- [ ] `http://dviegas.42.fr` (port 80) does not respond.
+- [ ] Only port 443 is published: `docker ps` shows `0.0.0.0:443->443/tcp` for nginx and no ports for the others.
+- [ ] `/wp-admin` login works with the admin user, whose name does not contain "admin".
+- [ ] A post or comment added in WordPress is still there after `down` and `up`.
+- [ ] `docker logs mariadb` shows no passwords and no errors.
 
 ## Resources
 
@@ -226,16 +239,16 @@ sudo rm -rf /home/dviegas/data/mariadb/* /home/dviegas/data/wordpress/*
 - [PHP-FPM configuration](https://www.php.net/manual/en/install.fpm.configuration.php)
 - [WordPress developer resources](https://developer.wordpress.org/)
 - [WP-CLI handbook](https://make.wordpress.org/cli/handbook/)
-- [Inception Tutorial](https://dev.to/alejiri/docker-nginx-wordpress-mariadb-tutorial-inception42-1eok?ct=1791885494414)
+
 
 ### Use of AI
 
-AI (Claude, by Anthropic) was used as a support tool for the following tasks:
+AI (Claude, by Anthropic and Gemini by Google) were used as a support tool for the following tasks:
 
 - **Debugging the MariaDB container:** analyzing the restart-loop logs (`ERROR 1045: Access denied for user 'root'@'localhost'`) and identifying that the setup SQL ran on every start even though the root password had already been set.
-- **Rewriting the MariaDB entrypoint script** (`init_db.sh`) to make initialization idempotent, handle permissions on the data directory at runtime, and stop printing passwords to the logs.
-- **Reviewing `docker-compose.yml`:** spotting a missing `WP_USER_PASSWORD_FILE`, suggesting a healthcheck with `depends_on: condition: service_healthy`, and clarifying how named volumes with `driver_opts` relate to the subject's volume rules.
-- **Drafting this README**, including the comparison sections.-
+- **Rewriting the MariaDB entrypoint script** (`init_db.sh`) to make initialization idempotent, handle permissions on the data directory at runtime.
+- **Reviewing `docker-compose.yml`**
+- **Drafting this README and the other documentation**
 - **Designing and Generating**, html and css for the static website bonus.
 
-All AI-generated suggestions were reviewed, tested and adapted by the author, who is able to explain every part of the project.
+All AI-generated suggestions were reviewed, tested and adapted by me, I am able to explain every part of my project.

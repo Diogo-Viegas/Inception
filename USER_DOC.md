@@ -36,7 +36,7 @@ make down
 make up
 ```
 
-If your `Makefile` uses different target names, check it with `grep '^[a-z]*:' Makefile`. The equivalent Docker Compose commands are:
+The equivalent Docker Compose commands are:
 
 ```bash
 docker compose -f srcs/docker-compose.yml up --build -d    # start

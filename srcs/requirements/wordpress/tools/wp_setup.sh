@@ -79,9 +79,7 @@ EOF
                      --admin_email="${WP_ADMIN_EMAIL}" \
                      --path="$WP_PATH" --allow-root 
     wp user create "${WP_USER}" "${WP_USER_EMAIL}" --role=subscriber --user_pass="${WP_USER_PASSWORD}" --allow-root
-    echo "${WP_USER_PASSWORD}";
     echo "WordPress setup complete."
-    echo "ola"
 else
     echo "WordPress already initialized, skipping setup."
 fi
